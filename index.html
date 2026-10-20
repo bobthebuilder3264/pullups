@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pull-Up Photo Tracker</title>
+
+<style>
+:root {
+  --primary: #174a8b;
+  --bg: #f3f5f8;
+  --border: #dce2ea;
+  --green: #198754;
+  --red: #dc3545;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: #172033;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+}
+
+h1 {
+  margin: 0 0 6px;
+  font-size: 25px;
+}
+
+.subtitle {
+  margin: 0 0 20px;
+  color: #667085;
+  font-size: 14px;
+}
+
+.panel {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+input, select, button {
+  font: inherit;
+}
+
+select, input[type="date"] {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: white;
+  margin-bottom: 12px;
+}
+
+.settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.settings > div {
+  min-width: 0;
+}
+
+.progress {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.progress-bar {
+  height: 9px;
+  border-radius: 20px;
+  background: #e7ebf0;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--green);
+  transition: width .2s;
+}
+
+.roster {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cadet {
+  min-width: 0;
+  min-height: 120px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 10px;
+  text-align: center;
+  cursor: pointer;
+  color: #172033;
+}
+
+.cadet.done {
+  border: 2px solid var(--green);
+  background: #effaf3;
+}
+
+.cadet img {
+  width: 100%;
+  height: 75px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 5px;
+}
+
+.cadet-name {
+  font-weight: 700;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.cadet-status {
+  font-size: 11px;
+  color: #667085;
+  margin-top: 4px;
+}
+
+button {
+  border: 0;
+  border-radius: 9px;
+  padding: 12px 14px;
+  cursor: pointer;
+  font-weight: 650;
+}
+
+button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.primary {
+  background: var(--primary);
+  color: white;
+}
+
+.secondary {
+  background: #e9edf3;
+  color: #172033;
+}
+
+.danger {
+  background: #fff0f0;
+  color: var(--red);
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.button-row button {
+  flex: 1;
+}
+
+.note {
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.hidden {
+  display: none !important;
+}
+
+#photoPreview {
+  width: 100%;
+  max-height: 55vh;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #eef1f5;
+  margin-top: 10px;
+}
+
+#reportPreview {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+#statusMessage {
+  font-size: 13px;
+  color: #667085;
+  margin-top: 10px;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 600px) {
+  .roster {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 360px) {
+  body {
+    padding: 10px;
+  }
+
+  .roster {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+  <h1>Pull-Up Photo Tracker</h1>
+  <p class="subtitle">Squad evidence collection</p>
+
+  <section class="panel">
+    <div class="settings">
+      <div>
+        <label for="squad">Squad</label>
+        <select id="squad">
+          <option value="Squad 1">Squad 1</option>
+          <option value="Squad 2">Squad 2</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="session">Session</label>
+        <select id="session">
+          <option value="Lunch">Lunch</option>
+          <option value="Dinner">Dinner</option>
+        </select>
+      </div>
+
+      <div style="grid-column:1/-1">
+        <label for="sessionDate">Date</label>
+        <input type="date" id="sessionDate">
+      </div>
+    </div>
+
+    <p class="note">
+      Photos are stored locally in this browser on this device.
+      Do not clear the browser's website data before exporting your report.
+    </p>
+  </section>
+
+  <section class="panel">
+    <div class="progress">
+      <strong>Photo progress</strong>
+      <span id="progressText">0 / 24 completed</span>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <p class="note" id="timeSummary">No photos recorded yet.</p>
+  </section>
+
+  <section class="panel">
+    <h2 style="font-size:18px;margin-top:0">Cadet Roster</h2>
+    <p class="note">Tap a cadet to take a photo or choose one from your photo library.</p>
+    <div class="roster" id="roster"></div>
+  </section>
+
+  <section class="panel">
+    <h2 style="font-size:18px;margin-top:0">Generate Report</h2>
+
+    <p class="note">
+      Generates one image containing all 24 cadets, their photos,
+      timestamps and session details. Missing photos will be marked.
+    </p>
+
+    <div class="button-row">
+      <button class="primary" id="generateBtn">Generate Report Image</button>
+    </div>
+
+    <img id="reportPreview" class="hidden" alt="Generated report preview">
+
+    <div class="button-row">
+      <button class="primary" id="saveBtn" disabled>Save Image</button>
+      <button class="secondary" id="shareBtn" disabled>Share Image</button>
+    </div>
+
+    <p class="note">
+      You can save the image and attach it to WhatsApp manually if sharing
+      directly is unavailable.
+    </p>
+
+    <div id="statusMessage" role="status"></div>
+  </section>
+
+  <p class="note">
+    Prototype only. A photograph does not independently verify repetitions
+    or replace any required supervision. Follow your unit's approved procedure.
+  </p>
+
+</div>
+
+<!-- Camera input: capture attribute requests the rear camera on supported devices. -->
+<input
+  type="file"
+  id="cameraInput"
+  accept="image/*"
+  capture="environment"
+  class="hidden"
+>
+
+<!-- Gallery input: lets the user select an existing photo. -->
+<input
+  type="file"
+  id="galleryInput"
+  accept="image/*"
+  class="hidden"
+>
+
+<!-- Photo review dialog -->
+<div id="photoDialog" class="hidden" style="
+  position:fixed;
+  inset:0;
+  z-index:10;
+  overflow:auto;
+  background:rgba(0,0,0,.65);
+  padding:16px;
+">
+  <div style="
+    max-width:600px;
+    margin:20px auto;
+    padding:18px;
+    border-radius:14px;
+    background:white;
+  ">
+    <h2 id="photoTitle" style="font-size:20px;margin-top:0">Cadet</h2>
+
+    <p class="note">
+      Review the photo before confirming it.
+    </p>
+
+    <img id="photoPreview" class="hidden" alt="Photo preview">
+
+    <div class="button-row">
+      <button class="primary" id="confirmPhotoBtn" disabled>Confirm Photo</button>
+      <button class="secondary" id="retakeBtn">Retake / Choose Another</button>
+    </div>
+
+    <div class="button-row">
+      <button class="danger" id="removePhotoBtn">Remove Saved Photo</button>
+      <button class="secondary" id="closeDialogBtn">Close</button>
+    </div>
+
+    <p class="note" id="photoTimestamp"></p>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* =========================
+   CONFIGURATION
+========================= */
+
+const CADETS = Array.from({ length: 24 }, (_, i) => ({
+  id: String(i + 1).padStart(2, "0"),
+  name: "Cadet " + String(i + 1).padStart(2, "0")
+}));
+
+const DB_NAME = "PullUpPhotoTrackerDB";
+const DB_VERSION = 1;
+const STORE_NAME = "sessions";
+
+/* =========================
+   STATE
+========================= */
+
+let db = null;
+let state = { photos: {} };
+let currentCadetId = null;
+let pendingPhotoData = null;
+let generatedReportBlob = null;
+let generatedReportUrl = null;
+
+const $ = id => document.getElementById(id);
+
+const squadSelect = $("squad");
+const sessionSelect = $("session");
+const dateInput = $("sessionDate");
+const roster = $("roster");
+const cameraInput = $("cameraInput");
+const galleryInput = $("galleryInput");
+
+/* =========================
+   DATABASE
+========================= */
+
+function openDatabase() {
+  return new Promise((resolve, reject) => {
+    if (!("indexedDB" in window)) {
+      reject(new Error("IndexedDB is not supported by this browser."));
+      return;
+    }
+
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = () => {
+      const database = request.result;
+
+      if (!database.objectStoreNames.contains(STORE_NAME)) {
+        database.createObjectStore(STORE_NAME, { keyPath: "key" });
+      }
+    };
+
+    request.onsuccess = () => {
+      db = request.result;
+      resolve(db);
+    };
+
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function sessionKey() {
+  return [
+    dateInput.value,
+    squadSelect.value,
+    sessionSelect.value
+  ].join("_");
+}
+
+function loadSession() {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, "readonly");
+    const request = transaction.objectStore(STORE_NAME).get(sessionKey());
+
+    request.onsuccess = () => {
+      state = request.result || { key: sessionKey(), photos: {} };
+      state.photos ||= {};
+      resolve();
+    };
+
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function saveSession() {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, "readwrite");
+
+    transaction.objectStore(STORE_NAME).put({
+      key: sessionKey(),
+      photos: state.photos
+    });
+
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+    transaction.onabort = () => reject(transaction.error);
+  });
+}
+
+/* =========================
+   ROSTER
+========================= */
+
+function renderRoster() {
+  roster.innerHTML = "";
+
+  for (const cadet of CADETS) {
+    const photo = state.photos[cadet.id];
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.className = "cadet" + (photo ? " done" : "");
+
+    if (photo) {
+      const img = document.createElement("img");
+      img.src = photo.data;
+      img.alt = cadet.name + " photo";
+      button.appendChild(img);
+    }
+
+    const name = document.createElement("div");
+    name.className = "cadet-name";
+    name.textContent = cadet.name;
+    button.appendChild(name);
+
+    const status = document.createElement("div");
+    status.className = "cadet-status";
+
+    if (photo) {
+      status.textContent = formatTime(photo.timestamp);
+    } else {
+      status.textContent = "Tap to add photo";
+    }
+
+    button.appendChild(status);
+
+    button.addEventListener("click", () => openCadet(cadet.id));
+
+    roster.appendChild(button);
+  }
+
+  updateProgress();
+}
+
+function updateProgress() {
+  const photos = Object.values(state.photos);
+  const completed = photos.length;
+
+  $("progressText").textContent = `${completed} / ${CADETS.length} completed`;
+  $("progressFill").style.width =
+    `${(completed / CADETS.length) * 100}%`;
+
+  if (photos.length === 0) {
+    $("timeSummary").textContent = "No photos recorded yet.";
+    return;
+  }
+
+  const timestamps = photos
+    .map(p => p.timestamp)
+    .filter(Number.isFinite)
+    .sort((a, b) => a - b);
+
+  if (timestamps.length) {
+    $("timeSummary").textContent =
+      `First photo: ${formatDateTime(timestamps[0])} · ` +
+      `Last photo: ${formatDateTime(timestamps[timestamps.length - 1])}`;
+  }
+}
+
+/* =========================
+   PHOTO CAPTURE AND REVIEW
+========================= */
+
+function openCadet(id) {
+  currentCadetId = id;
+  pendingPhotoData = null;
+
+  const cadet = CADETS.find(c => c.id === id);
+  const savedPhoto = state.photos[id];
+
+  $("photoTitle").textContent = cadet ? cadet.name : "Cadet";
+  $("photoDialog").classList.remove("hidden");
+  $("photoPreview").classList.add("hidden");
+  $("confirmPhotoBtn").disabled = true;
+  $("photoTimestamp").textContent = savedPhoto
+    ? "Saved photo time: " + formatDateTime(savedPhoto.timestamp)
+    : "No photo saved for this cadet.";
+
+  if (savedPhoto) {
+    $("photoPreview").src = savedPhoto.data;
+    $("photoPreview").classList.remove("hidden");
+  }
+
+  // Offer the user both camera and gallery options.
+  showPhotoSourceOptions();
+}
+
+function showPhotoSourceOptions() {
+  const chooseCamera = window.confirm(
+    "Choose OK to take a new photo using the camera.\n\n" +
+    "Choose Cancel to select a photo from your library."
+  );
+
+  if (chooseCamera) {
+    cameraInput.value = "";
+    cameraInput.click();
+  } else {
+    galleryInput.value = "";
+    galleryInput.click();
+  }
+}
+
+function handleSelectedFile(event) {
+  const file = event.target.files && event.target.files[0];
+
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    alert("Please select an image.");
+    event.target.value = "";
+    return;
+  }
+
+  // Resize large images to reduce browser storage usage.
+  resizeImage(file)
+    .then(dataUrl => {
+      pendingPhotoData = dataUrl;
+
+      $("photoPreview").src = dataUrl;
+      $("photoPreview").classList.remove("hidden");
+      $("confirmPhotoBtn").disabled = false;
+      $("photoTimestamp").textContent =
+        "Confirming this photo will record the current time.";
+    })
+    .catch(error => {
+      console.error(error);
+      alert("Could not load this image. Please try another photo.");
+    })
+    .finally(() => {
+      event.target.value = "";
+    });
+}
+
+function resizeImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = () => reject(reader.error);
+
+    reader.onload = () => {
+      const img = new Image();
+
+      img.onerror = () => reject(new Error("Image could not be loaded."));
+
+      img.onload = () => {
+        const maxDimension = 1200;
+        const scale = Math.min(
+          1,
+          maxDimension / Math.max(img.width, img.height)
+        );
+
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+
+        const context = canvas.getContext("2d");
+        context.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+
+      img.src = reader.result;
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+cameraInput.addEventListener("change", handleSelectedFile);
+galleryInput.addEventListener("change", handleSelectedFile);
+
+$("retakeBtn").addEventListener("click", () => {
+  showPhotoSourceOptions();
+});
+
+$("confirmPhotoBtn").addEventListener("click", async () => {
+  if (!currentCadetId || !pendingPhotoData) return;
+
+  try {
+    state.photos[currentCadetId] = {
+      data: pendingPhotoData,
+      timestamp: Date.now()
+    };
+
+    await saveSession();
+
+    pendingPhotoData = null;
+    $("photoDialog").classList.add("hidden");
+
+    renderRoster();
+    setStatus("Photo saved successfully.");
+  } catch (error) {
+    console.error(error);
+    alert("Unable to save the photo. Check available device storage.");
+  }
+});
+
+$("removePhotoBtn").addEventListener("click", async () => {
+  if (!currentCadetId) return;
+
+  if (!confirm("Remove this cadet's saved photo?")) return;
+
+  delete state.photos[currentCadetId];
+
+  try {
+    await saveSession();
+    pendingPhotoData = null;
+    $("photoDialog").classList.add("hidden");
+    renderRoster();
+    setStatus("Saved photo removed.");
+  } catch (error) {
+    console.error(error);
+    alert("Unable to update the saved session.");
+  }
+});
+
+$("closeDialogBtn").addEventListener("click", () => {
+  $("photoDialog").classList.add("hidden");
+  pendingPhotoData = null;
+});
+
+/* =========================
+   REPORT IMAGE
+========================= */
+
+$("generateBtn").addEventListener("click", async () => {
+  try {
+    setStatus("Generating report image...");
+
+    const blob = await createReportImage();
+
+    generatedReportBlob = blob;
+
+    if (generatedReportUrl) {
+      URL.revokeObjectURL(generatedReportUrl);
+    }
+
+    generatedReportUrl = URL.createObjectURL(blob);
+
+    $("reportPreview").src = generatedReportUrl;
+    $("reportPreview").classList.remove("hidden");
+    $("saveBtn").disabled = false;
+    $("shareBtn").disabled = false;
+
+    setStatus("Report generated. Review the image before sharing.");
+  } catch (error) {
+    console.error(error);
+    setStatus("Could not generate the report. Try again or use fewer photos.");
+    alert("Could not generate the report image.");
+  }
+});
+
+async function createReportImage() {
+  const width = 1200;
+  const columns = 4;
+  const rows = Math.ceil(CADETS.length / columns);
+
+  const margin = 35;
+  const gap = 14;
+  const headerHeight = 225;
+  const tileWidth = (width - margin * 2 - gap * (columns - 1)) / columns;
+  const tileHeight = 235;
+
+  const height =
+    headerHeight +
+    margin +
+    rows * tileHeight +
+    (rows - 1) * gap +
+    margin;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height);
+
+  // Header
+  ctx.fillStyle = "#174a8b";
+  ctx.fillRect(0, 0, width, 155);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 36px Arial";
+  ctx.fillText("PULL-UP PHOTO RECORD", margin, 55);
+
+  ctx.font = "22px Arial";
+  ctx.fillText(
+    `${squadSelect.value}  |  ${sessionSelect.value}  |  ${dateInput.value}`,
+    margin,
+    100
+  );
+
+  const photoEntries = Object.values(state.photos);
+  const timestamps = photoEntries
+    .map(p => p.timestamp)
+    .filter(Number.isFinite)
+    .sort((a, b) => a - b);
+
+  ctx.fillStyle = "#172033";
+  ctx.font = "bold 20px Arial";
+  ctx.fillText(
+    `Photos recorded: ${photoEntries.length} / ${CADETS.length}`,
+    margin,
+    190
+  );
+
+  ctx.font = "17px Arial";
+
+  if (timestamps.length) {
+    ctx.fillText(
+      `First: ${formatDateTime(timestamps[0])}`,
+      margin,
+      220
+    );
+
+    ctx.fillText(
+      `Last: ${formatDateTime(timestamps[timestamps.length - 1])}`,
+      510,
+      220
+    );
+  } else {
+    ctx.fillText("No photos recorded.", margin, 220);
+  }
+
+  const startY = headerHeight + margin;
+
+  for (let i = 0; i < CADETS.length; i++) {
+    const cadet = CADETS[i];
+    const photo = state.photos[cadet.id];
+
+    const col = i % columns;
+    const row = Math.floor(i / columns);
+
+    const x = margin + col * (tileWidth + gap);
+    const y = startY + row * (tileHeight + gap);
+
+    // Tile background and border
+    ctx.fillStyle = "#f3f5f8";
+    ctx.fillRect(x, y, tileWidth, tileHeight);
+
+    ctx.strokeStyle = "#dce2ea";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, tileWidth, tileHeight);
+
+    // Name
+    ctx.fillStyle = "#172033";
+    ctx.font = "bold 18px Arial";
+    ctx.fillText(cadet.name, x + 10, y + 25);
+
+    const imageTop = y + 38;
+    const imageHeight = 150;
+    const imageWidth = tileWidth - 20;
+
+    if (photo) {
+      try {
+        const img = await loadImage(photo.data);
+
+        drawImageContain(
+          ctx,
+          img,
+          x + 10,
+          imageTop,
+          imageWidth,
+          imageHeight
+        );
+
+        ctx.fillStyle = "#198754";
+        ctx.font = "bold 15px Arial";
+        ctx.fillText("PHOTO RECORDED", x + 10, y + 211);
+
+        ctx.fillStyle = "#344054";
+        ctx.font = "12px Arial";
+        ctx.fillText(
+          formatDateTime(photo.timestamp),
+          x + 10,
+          y + 229
+        );
+      } catch {
+        drawMissingPhoto(ctx, x, imageTop, tileWidth);
+      }
+    } else {
+      drawMissingPhoto(ctx, x, imageTop, tileWidth);
+
+      ctx.fillStyle = "#b42318";
+      ctx.font = "bold 15px Arial";
+      ctx.fillText("NO PHOTO", x + 10, y + 211);
+    }
+  }
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (blob) resolve(blob);
+      else reject(new Error("Canvas export failed."));
+    }, "image/jpeg", 0.9);
+  });
+}
+
+function drawMissingPhoto(ctx, x, y, tileWidth) {
+  ctx.fillStyle = "#e7ebf0";
+  ctx.fillRect(x + 10, y, tileWidth - 20, 150);
+
+  ctx.fillStyle = "#667085";
+  ctx.font = "14px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText(
+    "No photo",
+    x + tileWidth / 2,
+    y + 80
+  );
+  ctx.textAlign = "left";
+}
+
+function drawImageContain(ctx, img, x, y, w, h) {
+  const scale = Math.min(w / img.width, h / img.height);
+  const drawW = img.width * scale;
+  const drawH = img.height * scale;
+
+  const dx = x + (w - drawW) / 2;
+  const dy = y + (h - drawH) / 2;
+
+  ctx.fillStyle = "#e7ebf0";
+  ctx.fillRect(x, y, w, h);
+
+  ctx.drawImage(img, dx, dy, drawW, drawH);
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+/* =========================
+   SAVE AND SHARE
+========================= */
+
+$("saveBtn").addEventListener("click", () => {
+  if (!generatedReportBlob) return;
+
+  const filename =
+    `PullUp_${squadSelect.value.replaceAll(" ", "")}_` +
+    `${sessionSelect.value}_${dateInput.value}.jpg`;
+
+  const link = document.createElement("a");
+  link.href = generatedReportUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  setStatus("Image save requested. Check your Downloads or Photos.");
+});
+
+$("shareBtn").addEventListener("click", async () => {
+  if (!generatedReportBlob) return;
+
+  const filename =
+    `PullUp_${squadSelect.value.replaceAll(" ", "")}_` +
+    `${sessionSelect.value}_${dateInput.value}.jpg`;
+
+  const file = new File(
+    [generatedReportBlob],
+    filename,
+    { type: "image/jpeg" }
+  );
+
+  try {
+    if (navigator.share && navigator.canShare &&
+        navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        title: "Pull-Up Photo Record",
+        text:
+          `${squadSelect.value} - ${sessionSelect.value} - ` +
+          `${dateInput.value}`,
+        files: [file]
+      });
+
+      setStatus("Share menu opened.");
+    } else {
+      setStatus(
+        "Direct sharing is not supported here. Save the image, " +
+        "then attach it in WhatsApp."
+      );
+    }
+  } catch (error) {
+    if (error.name !== "AbortError") {
+      console.error(error);
+      setStatus("Sharing failed. Save the image and send it manually.");
+    }
+  }
+});
+
+/* =========================
+   SESSION SWITCHING
+========================= */
+
+async function changeSession() {
+  try {
+    await loadSession();
+
+    generatedReportBlob = null;
+
+    if (generatedReportUrl) {
+      URL.revokeObjectURL(generatedReportUrl);
+      generatedReportUrl = null;
+    }
+
+    $("reportPreview").classList.add("hidden");
+    $("saveBtn").disabled = true;
+    $("shareBtn").disabled = true;
+
+    renderRoster();
+    setStatus("");
+  } catch (error) {
+    console.error(error);
+    setStatus("Unable to load this session.");
+  }
+}
+
+squadSelect.addEventListener("change", changeSession);
+sessionSelect.addEventListener("change", changeSession);
+dateInput.addEventListener("change", changeSession);
+
+/* =========================
+   UTILITIES
+========================= */
+
+function formatTime(timestamp) {
+  return new Date(timestamp).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  });
+}
+
+function formatDateTime(timestamp) {
+  return new Date(timestamp).toLocaleString([], {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  });
+}
+
+function setStatus(message) {
+  $("statusMessage").textContent = message;
+}
+
+/* =========================
+   STARTUP
+========================= */
+
+async function startApp() {
+  // Default date to today's local date.
+  const now = new Date();
+
+  dateInput.value = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0")
+  ].join("-");
+
+  try {
+    await openDatabase();
+    await loadSession();
+    renderRoster();
+  } catch (error) {
+    console.error(error);
+
+    setStatus(
+      "Storage could not be opened. Try using Safari or Chrome " +
+      "through your GitHub Pages HTTPS address."
+    );
+  }
+}
+
+startApp();
+</script>
+</body>
+</html>
